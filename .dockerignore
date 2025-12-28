@@ -40,9 +40,8 @@ yarn-error.log*
 server/data/
 server/uploads/
 
-# Docker files
+# Docker files (keep root Dockerfile, ignore deploy folder)
 deploy/
-Dockerfile
 .dockerignore
 docker-compose.yml
 
