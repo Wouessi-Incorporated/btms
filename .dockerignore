@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+server/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.local
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+README.txt
+QUICKSTART.md
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database and uploads (will be mounted as volumes)
+server/data/
+server/uploads/
+
+# Docker files
+deploy/
+Dockerfile
+.dockerignore
+docker-compose.yml
+
