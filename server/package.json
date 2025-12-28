@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "NODE_ENV=development node index.js"
+    "dev": "node index.js"
   },
   "dependencies": {
     "basic-auth": "^2.0.1",
