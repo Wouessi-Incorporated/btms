@@ -1,6 +1,8 @@
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const https = require('https');
 const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -284,6 +286,61 @@ app.get('/admin/api/registration/:id/payment-proof', requireAdmin, (req, res) =>
 
 app.get('/health', (req,res)=>res.json({ ok:true }));
 
+// Heartbeat mechanism to prevent instance spin-down - runs continuously
+function startHeartbeat() {
+  const heartbeatUrl = process.env.HEARTBEAT_URL || `http://localhost:${PORT}/health`;
+  const heartbeatInterval = parseInt(process.env.HEARTBEAT_INTERVAL || '15000', 10); // Default: 15 seconds (15000ms)
+  
+  const pingHealth = () => {
+    console.log(`[Heartbeat] Attempting to ping server at ${new Date().toISOString()}`);
+    try {
+      const url = new URL(heartbeatUrl);
+      const isHttps = url.protocol === 'https:';
+      const requestModule = isHttps ? https : http;
+      
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: url.pathname,
+        method: 'GET',
+        timeout: 5000
+      };
+      
+      const req = requestModule.request(options, (res) => {
+        if (res.statusCode === 200) {
+          console.log(`[Heartbeat] ✓ Ping successful - Server is active at ${new Date().toISOString()}`);
+        } else {
+          console.log(`[Heartbeat] ⚠ Ping returned status ${res.statusCode} at ${new Date().toISOString()}`);
+        }
+      });
+      
+      req.on('error', (err) => {
+        // Errors are logged but don't stop the heartbeat
+        console.error(`[Heartbeat] Error pinging server:`, err.message);
+      });
+      
+      req.on('timeout', () => {
+        req.destroy();
+        console.error(`[Heartbeat] Request timeout`);
+      });
+      
+      req.end();
+    } catch (err) {
+      // Errors are logged but don't stop the heartbeat
+      console.error(`[Heartbeat] Failed to ping:`, err.message);
+    }
+  };
+  
+  // Ping immediately on start
+  pingHealth();
+  
+  // Start continuous heartbeat - runs indefinitely every interval
+  setInterval(pingHealth, heartbeatInterval);
+  const intervalSeconds = heartbeatInterval / 1000;
+  console.log(`[Heartbeat] Started - continuously pinging ${heartbeatUrl} every ${intervalSeconds} second(s)`);
+}
+
 app.listen(PORT, () => {
   console.log(`BMTS Events running on port ${PORT}`);
+  startHeartbeat();
 });
