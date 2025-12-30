@@ -36,7 +36,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
-MAIL_FROM=bahamasmts@gmail.com
+MAIL_FROM=bcrousseau@hotmail.com
 ```
 
 ### 3. Build and Start the Container
@@ -223,6 +223,6 @@ curl http://localhost:3000/health
 
 ## Support
 
-For issues or questions, contact: bahamasmts@gmail.com
+For issues or questions, contact: bcrousseau@hotmail.com
 
 

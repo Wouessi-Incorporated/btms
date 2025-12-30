@@ -111,7 +111,7 @@ const transporter = createTransport();
 
 async function sendEmail(to, subject, text){
   if(!transporter) return;
-  const from = process.env.MAIL_FROM || 'bahamasmts@gmail.com';
+  const from = process.env.MAIL_FROM || 'bcrousseau@hotmail.com';
   await transporter.sendMail({ from, to, subject, text });
 }
 
@@ -263,7 +263,7 @@ app.post('/admin/api/registration/:id/status', requireAdmin, async (req, res) =>
       `Dear ${row.first_name},`,
       ``,
       `We were unable to verify the payment proof submitted with your registration.`,
-      `Please contact the organisers at bahamasmts@gmail.com if you need assistance.`,
+      `Please contact the organisers at bcrousseau@hotmail.com if you need assistance.`,
       ``,
       `Registration ID: ${row.id}`,
       ``,

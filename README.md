@@ -108,7 +108,7 @@ bmts-events/
 | `SMTP_PORT` | No | SMTP server port | `587` |
 | `SMTP_USER` | No | SMTP username | - |
 | `SMTP_PASS` | No | SMTP password | - |
-| `MAIL_FROM` | No | Email sender address | `bahamasmts@gmail.com` |
+| `MAIL_FROM` | No | Email sender address | `bcrousseau@hotmail.com` |
 
 ## Admin Dashboard
 
@@ -163,5 +163,5 @@ For production deployment, see the `deploy/` folder for Docker configuration. Re
 
 ## Support
 
-For issues or questions, contact: bahamasmts@gmail.com
+For issues or questions, contact: bcrousseau@hotmail.com
 
