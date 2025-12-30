@@ -507,3 +507,20 @@ textarea:focus {
     transform: none
   }
 }
+
+.pricing-offer {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(56, 217, 150, .08);
+  border: 1px solid rgba(56, 217, 150, .2);
+  color: var(--ok);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.pricing-offer strong {
+  font-size: 18px;
+  color: var(--ok);
+}
