@@ -65,4 +65,4 @@ Security notes
 - Never share uploads publicly
 
 Support contact shown on the site
-bcrousseau@hotmail.com
+bahamasmts@bmts-events.com
