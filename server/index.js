@@ -95,24 +95,49 @@ const upload = multer({
 
 // Email (optional)
 function createTransport(){
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const host = process.env.SMTP_HOST ? String(process.env.SMTP_HOST).trim() : null;
+  const user = process.env.SMTP_USER ? String(process.env.SMTP_USER).trim() : null;
+  const pass = process.env.SMTP_PASS ? String(process.env.SMTP_PASS).trim() : null;
   const port = Number(process.env.SMTP_PORT || 587);
   if(!host || !user || !pass) return null;
 
-  return nodemailer.createTransport({
-    host, port,
-    secure: port === 465,
-    auth: { user, pass }
-  });
+  // Validate host format (should not contain '=' or other invalid characters)
+  if(host.includes('=') || host.includes(' ')){
+    console.error('[Email Config Error] Invalid SMTP_HOST format. Remove any extra characters or spaces.');
+    console.error(`[Email Config Error] Current SMTP_HOST value: "${host}"`);
+    console.error('[Email Config Error] Expected format: SMTP_HOST=smtp.zoho.com (no spaces, no quotes, no duplicates)');
+    return null;
+  }
+
+  try {
+    return nodemailer.createTransport({
+      host, port,
+      secure: port === 465,
+      auth: { user, pass }
+    });
+  } catch(err){
+    console.error('[Email Config Error] Failed to create email transporter:', err.message);
+    return null;
+  }
 }
 const transporter = createTransport();
 
 async function sendEmail(to, subject, text){
-  if(!transporter) return;
-  const from = process.env.MAIL_FROM || 'bcrousseau@hotmail.com';
-  await transporter.sendMail({ from, to, subject, text });
+  if(!transporter) {
+    console.warn('[Email] Transporter not configured. Email not sent.');
+    return;
+  }
+  try {
+    const from = process.env.MAIL_FROM || 'bahamasmts@bmts-events.com';
+    await transporter.sendMail({ from, to, subject, text });
+    console.log(`[Email] Sent successfully to: ${to}`);
+  } catch(err){
+    console.error('[Email Error] Failed to send email:', err.message);
+    if(err.code === 'EBADNAME' || err.code === 'EDNS'){
+      console.error('[Email Error] DNS/Hostname issue. Check SMTP_HOST value in .env file.');
+      console.error('[Email Error] Make sure SMTP_HOST=smtp.zoho.com (no spaces, no quotes, no duplicates)');
+    }
+  }
 }
 
 // API registration
@@ -169,21 +194,91 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       admin_notes: ''
     });
 
-    // Email: submission received
+    // Professional email: submission received
+    const registrationDate = new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
     const msg = [
-      `Dear ${body.first_name},`,
+      `Dear ${body.title} ${body.last_name},`,
       ``,
-      `Thank you for submitting your registration for Bahamas Middle Temple Week 2026.`,
-      `Your registration and payment proof have been received and are currently under review.`,
-      `You will receive a confirmation email once your payment has been verified.`,
+      `Thank you for registering for The Bahamas Middle Temple Week 2026 – Advocacy Training Programme.`,
+      ``,
+      `We have successfully received your registration and payment proof. Your submission is currently under review by our administrative team.`,
+      ``,
+      `REGISTRATION CONFIRMATION`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
       ``,
       `Registration ID: ${id}`,
+      `Registration Date: ${registrationDate}`,
+      `Name: ${body.title} ${body.first_name} ${body.last_name}`,
+      `Practice Track: ${body.practice_track} Advocacy`,
+      `Payment Method: ${body.payment_method}`,
+      body.company ? `Firm/Company: ${body.company}` : '',
       ``,
-      `Kind regards,`,
-      `Bahamas Middle Temple Society`
-    ].join('\n');
+      `EVENT DETAILS`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      ``,
+      `Event: The Bahamas Middle Temple Week 2026`,
+      `Date: 19–23 January 2026`,
+      `Venue: British Colonial Hilton`,
+      `Location: Nassau, New Providence, The Bahamas`,
+      ``,
+      `NEXT STEPS`,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      ``,
+      `1. Payment Verification: Our team will review your payment proof within 2-3 business days.`,
+      `2. Confirmation Email: Once your payment is verified, you will receive a confirmation email with further instructions.`,
+      `3. Programme Materials: Additional programme details and materials will be sent closer to the event date.`,
+      ``,
+      `Please retain this email and your Registration ID (${id}) for your records.`,
+      ``,
+      `If you have any questions or need to update your registration, please contact us at bahamasmts@bmts-events.com.`,
+      ``,
+      `We look forward to welcoming you to Nassau in January 2026.`,
+      ``,
+      `Best regards,`,
+      ``,
+      `The Bahamas Middle Temple Society`,
+      `Organising Committee`,
+      `Bahamas Middle Temple Week 2026`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+      `This is an automated confirmation email. Please do not reply directly to this message.`,
+      `For enquiries, contact: bahamasmts@bmts-events.com`
+    ].filter(line => line !== '').join('\n');
 
     await sendEmail(body.email, 'Registration Received – Bahamas Middle Temple Week 2026', msg);
+
+    // Email notification to owner about new registration
+    const ownerEmail = process.env.OWNER_EMAIL || 'bahamasmts@bmts-events.com';
+    const ownerMsg = [
+      `New Registration Received`,
+      ``,
+      `A new registration has been submitted for Bahamas Middle Temple Week 2026.`,
+      ``,
+      `Registration Details:`,
+      `- Registration ID: ${id}`,
+      `- Name: ${body.title} ${body.first_name} ${body.last_name}`,
+      `- Email: ${body.email}`,
+      `- Telephone: ${body.telephone}`,
+      `- Practice Track: ${body.practice_track}`,
+      `- Payment Method: ${body.payment_method}`,
+      `- Middle Temple Member: ${body.middle_temple_member}`,
+      `- BMTS Member Interest: ${body.bmts_member_interest}`,
+      body.company ? `- Company: ${body.company}` : '',
+      body.city ? `- City: ${body.city}` : '',
+      ``,
+      `Status: ${status}`,
+      ``,
+      `Please review this registration in the admin panel.`,
+      `Admin Panel: ${req.protocol}://${req.get('host')}/admin/`
+    ].filter(line => line !== '').join('\n');
+
+    await sendEmail(ownerEmail, `New Registration: ${body.first_name} ${body.last_name} – Bahamas Middle Temple Week 2026`, ownerMsg);
 
     return res.status(200).json({ registration_id: id });
 
@@ -263,7 +358,7 @@ app.post('/admin/api/registration/:id/status', requireAdmin, async (req, res) =>
       `Dear ${row.first_name},`,
       ``,
       `We were unable to verify the payment proof submitted with your registration.`,
-      `Please contact the organisers at bcrousseau@hotmail.com if you need assistance.`,
+      `Please contact the organisers at bahamasmts@bmts-events.com if you need assistance.`,
       ``,
       `Registration ID: ${row.id}`,
       ``,
