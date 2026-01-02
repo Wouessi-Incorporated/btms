@@ -526,8 +526,8 @@ textarea:focus {
 }
 
 .early-bird-offer {
-  background: linear-gradient(135deg, rgba(255, 215, 0, .15), rgba(255, 165, 0, .08));
-  border: 2px solid rgba(255, 215, 0, .4);
+  background: linear-gradient(135deg, rgba(56, 217, 150, .15), rgba(34, 197, 94, .08));
+  border: 2px solid rgba(56, 217, 150, .4);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
@@ -544,20 +544,20 @@ textarea:focus {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 215, 0, .1), transparent);
+  background: linear-gradient(45deg, transparent, rgba(56, 217, 150, .1), transparent);
   animation: earlyBirdShimmer 3s linear infinite;
 }
 
 .early-bird-star {
   font-size: 32px;
-  color: #ffd700;
-  text-shadow: 0 0 10px rgba(255, 215, 0, .5);
+  color: #38d996;
+  text-shadow: 0 0 10px rgba(56, 217, 150, .5);
   animation: starPulse 1.5s ease-in-out infinite alternate;
   margin-bottom: 8px;
 }
 
 .early-bird-text {
-  color: #fff3cd;
+  color: #d7fff0;
   font-size: 14px;
   line-height: 1.4;
   margin-bottom: 10px;
@@ -567,7 +567,7 @@ textarea:focus {
 
 .early-bird-text strong {
   font-size: 16px;
-  color: #ffd700;
+  color: #38d996;
   display: block;
   margin-bottom: 4px;
 }
@@ -575,7 +575,7 @@ textarea:focus {
 .early-bird-price {
   font-size: 28px;
   font-weight: 700;
-  color: #ffd700;
+  color: #38d996;
   text-shadow: 0 2px 4px rgba(0, 0, 0, .3);
   position: relative;
   z-index: 1;
@@ -583,11 +583,11 @@ textarea:focus {
 
 @keyframes earlyBirdGlow {
   0% {
-    box-shadow: 0 0 20px rgba(255, 215, 0, .2);
+    box-shadow: 0 0 20px rgba(56, 217, 150, .2);
   }
 
   100% {
-    box-shadow: 0 0 30px rgba(255, 215, 0, .4);
+    box-shadow: 0 0 30px rgba(56, 217, 150, .4);
   }
 }
 
