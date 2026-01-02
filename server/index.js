@@ -134,14 +134,39 @@ function createTransport() {
 }
 const transporter = createTransport();
 
-async function sendEmail(to, subject, text) {
+async function sendEmail(to, subject, text, html = null) {
   if (!transporter) {
     console.warn('[Email] Transporter not configured. Email not sent.');
     return;
   }
   try {
     const from = process.env.MAIL_FROM || 'bahamasmts@bmts-events.com';
-    await transporter.sendMail({ from, to, subject, text });
+    const replyTo = process.env.MAIL_FROM || 'bahamasmts@bmts-events.com';
+
+    // Enhanced email options to improve deliverability
+    const mailOptions = {
+      from: `"The Bahamas Middle Temple Society" <${from}>`, // Friendly name
+      to: to,
+      replyTo: replyTo,
+      subject: subject,
+      text: text,
+      headers: {
+        'X-Mailer': 'BMTS Events Registration System',
+        'X-Priority': '3', // Normal priority
+        'X-MSMail-Priority': 'Normal',
+        'Importance': 'Normal',
+        'List-Unsubscribe': `<mailto:${from}?subject=Unsubscribe>`,
+        'Organization': 'The Bahamas Middle Temple Society',
+        'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply'
+      }
+    };
+
+    // Add HTML version if provided
+    if (html) {
+      mailOptions.html = html;
+    }
+
+    await transporter.sendMail(mailOptions);
     console.log(`[Email] Sent successfully to: ${to}`);
   } catch (err) {
     console.error('[Email Error] Failed to send email:', err.message);
@@ -584,7 +609,7 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       payment_method: body.payment_method
     });
 
-    await sendEmail(body.email, emailTemplate.subject, emailTemplate.text);
+    await sendEmail(body.email, emailTemplate.subject, emailTemplate.text, emailTemplate.html);
 
     // Email notification to owner about new registration
     const ownerEmail = process.env.OWNER_EMAIL || 'bahamasmts@bmts-events.com';
