@@ -29,6 +29,10 @@
   }
 
   if (form) {
+    const submitButton = document.getElementById('submitButton');
+    const buttonText = submitButton.querySelector('.button-text');
+    const buttonSpinner = submitButton.querySelector('.button-spinner');
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -37,6 +41,11 @@
         setStatus('Please confirm consent to continue.', 'error');
         return;
       }
+
+      // Disable button and show spinner
+      submitButton.disabled = true;
+      buttonText.style.display = 'none';
+      buttonSpinner.style.display = 'inline-flex';
 
       const fd = new FormData(form);
 
@@ -52,6 +61,10 @@
 
         if (!res.ok) {
           setStatus(data.message || 'Submission failed. Please try again.', 'error');
+          // Re-enable button and hide spinner on failure
+          submitButton.disabled = false;
+          buttonText.style.display = 'inline-flex';
+          buttonSpinner.style.display = 'none';
           return;
         }
 
@@ -61,6 +74,10 @@
 
       } catch (err) {
         setStatus('Network error. Please try again.', 'error');
+        // Re-enable button and hide spinner on error
+        submitButton.disabled = false;
+        buttonText.style.display = 'inline-flex';
+        buttonSpinner.style.display = 'none';
       }
     });
   }

@@ -617,6 +617,10 @@ function generateStatusChangeNotificationEmail(registration, newStatus, oldStatu
 
 // API registration
 app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
+  console.log('[Debug] /api/register received a request.');
+  console.log('[Debug] Body:', JSON.stringify(req.body, null, 2));
+  console.log('[Debug] File:', req.file);
+
   try {
     const body = req.body || {};
     const file = req.file;
@@ -624,6 +628,7 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
     const required = ['title', 'first_name', 'last_name', 'telephone', 'email', 'practice_track', 'consent'];
     for (const k of required) {
       if (!body[k] || String(body[k]).trim() === '') {
+        console.log(`[Debug] Validation failed: Missing required field '${k}'.`);
         return res.status(400).json({ message: 'Please complete all required fields.' });
       }
     }
@@ -648,7 +653,7 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       )
     `);
 
-    stmt.run({
+    const params = {
       id, created_at, status,
       middle_temple_member: body.middle_temple_member || '',
       bmts_member_interest: body.bmts_member_interest || '',
@@ -665,7 +670,10 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       payment_file_name: file ? (file.originalname || file.filename) : '',
       payment_file_path: file ? file.path : '',
       admin_notes: ''
-    });
+    };
+
+    console.log('[Debug] Preparing to insert into DB with params:', JSON.stringify(params, null, 2));
+    stmt.run(params);
 
     // Professional email: submission received
     const emailTemplate = generateRegistrationConfirmationEmail({
@@ -704,9 +712,11 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
 
     await sendEmail(ownerEmail, adminEmailTemplate.subject, adminEmailTemplate.text);
 
+    console.log(`[Debug] Registration successful for ID: ${id}`);
     return res.status(200).json({ registration_id: id });
 
   } catch (err) {
+    console.error('[Debug] An error occurred in /api/register:', err);
     return res.status(400).json({ message: err.message || 'Submission failed.' });
   }
 });
