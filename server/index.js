@@ -38,13 +38,86 @@ app.use(express.static(PUBLIC_DIR));
 
 // Database
 const db = new Database(DB_PATH);
+
+// --- BEGIN DB MIGRATION ---
+// This script is wrapped in a check for an environment variable for production safety.
+// To run, start the server with `RUN_DB_MIGRATION=true node server/index.js`
+if (process.env.RUN_DB_MIGRATION === 'true') {
+  try {
+    // Check if the 'registrations' table exists.
+    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='registrations'").get();
+
+    if (tableExists) {
+      const columns = db.prepare(`PRAGMA table_info(registrations)`).all();
+      const paymentMethodColumn = columns.find(c => c.name === 'payment_method');
+
+      // If `payment_method` has a NOT NULL constraint, we need to migrate.
+      if (paymentMethodColumn && paymentMethodColumn.notnull) {
+        console.log('[Migration] Old schema detected. Applying update to `registrations` table...');
+
+        db.transaction(() => {
+          // 1. Get existing column names to preserve data.
+          const columnNames = columns.map(c => c.name).join(', ');
+
+          // 2. Rename the old table.
+          db.exec('ALTER TABLE registrations RENAME TO _registrations_old');
+
+          // 3. Create the new table with the corrected schema (allowing NULLs).
+          db.exec(`
+            CREATE TABLE registrations (
+              id TEXT PRIMARY KEY,
+              created_at TEXT NOT NULL,
+              status TEXT NOT NULL,
+              middle_temple_member TEXT,
+              bmts_member_interest TEXT,
+              title TEXT NOT NULL,
+              first_name TEXT NOT NULL,
+              last_name TEXT NOT NULL,
+              company TEXT,
+              po_box TEXT,
+              city TEXT,
+              telephone TEXT NOT NULL,
+              email TEXT NOT NULL,
+              practice_track TEXT NOT NULL,
+              payment_method TEXT,
+              payment_file_name TEXT,
+              payment_file_path TEXT,
+              admin_notes TEXT
+            )
+          `);
+
+          // 4. Copy all data from the old table to the new one.
+          db.exec(`INSERT INTO registrations (${columnNames}) SELECT ${columnNames} FROM _registrations_old`);
+
+          // 5. Drop the old table.
+          db.exec('DROP TABLE _registrations_old');
+        })();
+
+        console.log('[Migration] ✅ Table schema updated successfully.');
+      } else {
+        console.log('[Migration] Schema is already up-to-date. No migration needed.');
+      }
+    } else {
+      console.log('[Migration] `registrations` table not found. It will be created automatically.');
+    }
+    // Once migration is done (or not needed), exit the process to prevent the app from starting.
+    // The user should restart it without the env variable.
+    console.log('[Migration] Process complete. Exiting.');
+    process.exit(0);
+  } catch (err) {
+    console.error('[Migration] Fatal error during database migration:', err.message);
+    process.exit(1);
+  }
+}
+// --- END DB MIGRATION ---
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS registrations (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
     status TEXT NOT NULL,
-    middle_temple_member TEXT NOT NULL,
-    bmts_member_interest TEXT NOT NULL,
+    middle_temple_member TEXT,
+    bmts_member_interest TEXT,
     title TEXT NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
@@ -54,9 +127,9 @@ db.exec(`
     telephone TEXT NOT NULL,
     email TEXT NOT NULL,
     practice_track TEXT NOT NULL,
-    payment_method TEXT NOT NULL,
-    payment_file_name TEXT NOT NULL,
-    payment_file_path TEXT NOT NULL,
+    payment_method TEXT,
+    payment_file_name TEXT,
+    payment_file_path TEXT,
     admin_notes TEXT
   );
   CREATE INDEX IF NOT EXISTS idx_reg_created_at ON registrations(created_at);
@@ -548,9 +621,7 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
     const body = req.body || {};
     const file = req.file;
 
-    if (!file) return res.status(400).json({ message: 'Payment proof is required.' });
-
-    const required = ['middle_temple_member', 'bmts_member_interest', 'title', 'first_name', 'last_name', 'telephone', 'email', 'practice_track', 'payment_method', 'consent'];
+    const required = ['title', 'first_name', 'last_name', 'telephone', 'email', 'practice_track', 'consent'];
     for (const k of required) {
       if (!body[k] || String(body[k]).trim() === '') {
         return res.status(400).json({ message: 'Please complete all required fields.' });
@@ -579,8 +650,8 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
 
     stmt.run({
       id, created_at, status,
-      middle_temple_member: body.middle_temple_member,
-      bmts_member_interest: body.bmts_member_interest,
+      middle_temple_member: body.middle_temple_member || '',
+      bmts_member_interest: body.bmts_member_interest || '',
       title: body.title,
       first_name: body.first_name,
       last_name: body.last_name,
@@ -590,9 +661,9 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       telephone: body.telephone,
       email: body.email,
       practice_track: body.practice_track,
-      payment_method: body.payment_method,
-      payment_file_name: file.originalname || file.filename,
-      payment_file_path: file.path,
+      payment_method: body.payment_method || '',
+      payment_file_name: file ? (file.originalname || file.filename) : '',
+      payment_file_path: file ? file.path : '',
       admin_notes: ''
     });
 
@@ -606,7 +677,7 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       telephone: body.telephone,
       company: body.company || '',
       practice_track: body.practice_track,
-      payment_method: body.payment_method
+      payment_method: body.payment_method || ''
     });
 
     await sendEmail(body.email, emailTemplate.subject, emailTemplate.text, emailTemplate.html);
@@ -624,11 +695,11 @@ app.post('/api/register', upload.single('payment_proof'), async (req, res) => {
       city: body.city || '',
       po_box: body.po_box || '',
       practice_track: body.practice_track,
-      payment_method: body.payment_method,
+      payment_method: body.payment_method || '',
       middle_temple_member: body.middle_temple_member,
       bmts_member_interest: body.bmts_member_interest,
       status,
-      payment_file_name: file.originalname || file.filename
+      payment_file_name: file ? (file.originalname || file.filename) : ''
     });
 
     await sendEmail(ownerEmail, adminEmailTemplate.subject, adminEmailTemplate.text);
