@@ -1,0 +1,23 @@
+services:
+  bmts-events:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: bmts-events
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - UPLOAD_DIR=/app/server/uploads
+      - DB_PATH=/app/server/data/bmts.sqlite
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - MAIL_FROM=${MAIL_FROM}
+    volumes:
+      - ../server/uploads:/app/server/uploads
+      - ../server/data:/app/server/data
+    ports:
+      - "3000:3000"

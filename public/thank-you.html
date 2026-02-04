@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Thank You | BMTS Events</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <div class="brand"><span class="brand-badge"></span><span>BMTS Events</span></div>
+      <div class="nav-actions">
+        <a class="btn" href="/">Back to Home</a>
+        <a class="btn" href="mailto:bahamasmts@bmts-events.com">Contact</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="section">
+    <div class="container">
+      <div class="card">
+        <div class="card-pad">
+          <h1 class="h1" style="font-size:28px">Thank you for your registration</h1>
+          <p class="sub">Your submission has been received and is currently under review. You will be contacted by email once your payment has been verified.</p>
+
+          <div class="notice" id="ridBox" style="display:none"></div>
+
+          <p class="small" style="margin-top:12px">If you have any questions, please contact: <a href="mailto:bahamasmts@bmts-events.com">bahamasmts@bmts-events.com</a></p>
+
+          <div class="actions" style="margin-top:14px">
+            <a class="btn primary" href="/">Return to Home</a>
+            <a class="btn" href="/privacy.html">Privacy Policy</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const box = document.getElementById('ridBox');
+    if(id && box){
+      box.style.display = 'block';
+      box.textContent = 'Registration ID: ' + id + ' (keep this for reference).';
+    }
+  </script>
+</body>
+</html>
